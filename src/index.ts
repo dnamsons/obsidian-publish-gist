@@ -1,5 +1,6 @@
-import { App, Editor, MarkdownView, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian'
+import { MarkdownView, Notice, Plugin } from 'obsidian'
 import { Octokit } from '@octokit/rest'
+import GistSyncSettingTab from './settings'
 
 interface PluginSettings {
 	token: string
@@ -25,13 +26,15 @@ export default class PublishGistPlugin extends Plugin {
 			id: 'publish-gist',
 			name: 'Publish file to Github gist',
 			editorCallback: async (editor) => {
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView)
+				const markdownView =
+					this.app.workspace.getActiveViewOfType(MarkdownView)
 				if (!!this.githubInterface) {
 					const file = markdownView.file
 
 					let content = await this.app.vault.read(file)
 
-					const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter
+					const frontmatter =
+						this.app.metadataCache.getFileCache(file)?.frontmatter
 
 					let result
 
@@ -52,11 +55,17 @@ export default class PublishGistPlugin extends Plugin {
 						if (frontmatter) {
 							let frontmatterEnd = frontmatter.position.end.line
 							let lines = content.split('\n')
-							lines.splice(frontmatterEnd, 0, `gist_id: \"${gistId}\"`)
+							lines.splice(
+								frontmatterEnd,
+								0,
+								`gist_id: \"${gistId}\"`
+							)
 
 							editor.setValue(lines.join('\n'))
 						} else {
-							editor.setValue(`---\ngist_id: \"${gistId}\"\n---\n\n${content}`)
+							editor.setValue(
+								`---\ngist_id: \"${gistId}\"\n---\n\n${content}`
+							)
 						}
 					}
 
@@ -73,43 +82,14 @@ export default class PublishGistPlugin extends Plugin {
 	onunload() {}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData())
+		this.settings = Object.assign(
+			{},
+			DEFAULT_SETTINGS,
+			await this.loadData()
+		)
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings)
-	}
-}
-
-class GistSyncSettingTab extends PluginSettingTab {
-	plugin: PublishGistPlugin
-
-	constructor(app: App, plugin: PublishGistPlugin) {
-		super(app, plugin)
-		this.plugin = plugin
-	}
-
-	display(): void {
-		const { containerEl } = this
-
-		containerEl.empty()
-
-		const span = containerEl.createSpan()
-		containerEl.createEl('p', {
-			text: 'To use this plugin, you need to create a Github API token',
-			parent: span
-		})
-		containerEl.createEl('a', {
-			text: 'Create a Github API token.',
-			href: 'https://github.com/settings/tokens/new',
-			parent: span
-		})
-
-		new Setting(containerEl).setName('Github access token').addText((text) =>
-			text.setValue(this.plugin.settings.token).onChange(async (value) => {
-				this.plugin.settings.token = value
-				await this.plugin.saveSettings()
-			})
-		)
 	}
 }
