@@ -1,6 +1,8 @@
 import { Editor, MarkdownView, Notice, Plugin } from 'obsidian'
 import { Octokit } from '@octokit/rest'
 import GistSyncSettingTab from './settings'
+import { getFrontMatter } from './utils'
+import NoteLinkTransformer from './noteLinkTransformer'
 
 interface PluginSettings {
 	token: string
@@ -46,17 +48,18 @@ export default class PublishGistPlugin extends Plugin {
 
 		let content = await this.app.vault.read(file)
 
-		const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter
+		const frontmatter = getFrontMatter(this.app, file)
+		const uploadableContent = new NoteLinkTransformer(this.app, file).transform(content)
 
-		if (frontmatter && frontmatter.gist_id) {
+		if (frontmatter?.gist_id) {
 			await this.githubInterface.rest.gists.update({
 				gist_id: frontmatter.gist_id,
-				files: { [file.name]: { content } },
+				files: { [file.name]: { content: uploadableContent } },
 				public: false
 			})
 		} else {
 			const result = await this.githubInterface.rest.gists.create({
-				files: { [file.name]: { content } },
+				files: { [file.name]: { content: uploadableContent } },
 				public: false
 			})
 
