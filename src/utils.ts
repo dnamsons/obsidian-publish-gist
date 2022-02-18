@@ -1,6 +1,6 @@
 import { App, TFile, FrontMatterCache } from 'obsidian'
 
-interface FrontMatter extends FrontMatterCache {
+export interface FrontMatter extends FrontMatterCache {
 	gist_id?: string
 }
 
