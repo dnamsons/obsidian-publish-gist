@@ -18,23 +18,19 @@ export default class PublishGistPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings()
 
-		if (this.settings.token !== '') {
-			this.githubInterface = new Octokit({ auth: this.settings.token })
-		}
+		this.createGithubConnection()
 
 		this.addCommand({
 			id: 'publish-gist',
 			name: 'Publish file to Github gist',
 			editorCallback: async (editor) => {
-				const markdownView =
-					this.app.workspace.getActiveViewOfType(MarkdownView)
-				if (!!this.githubInterface) {
+				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView)
+				if (this.githubInterface != null) {
 					const file = markdownView.file
 
 					let content = await this.app.vault.read(file)
 
-					const frontmatter =
-						this.app.metadataCache.getFileCache(file)?.frontmatter
+					const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter
 
 					let result
 
@@ -55,17 +51,11 @@ export default class PublishGistPlugin extends Plugin {
 						if (frontmatter) {
 							let frontmatterEnd = frontmatter.position.end.line
 							let lines = content.split('\n')
-							lines.splice(
-								frontmatterEnd,
-								0,
-								`gist_id: \"${gistId}\"`
-							)
+							lines.splice(frontmatterEnd, 0, `gist_id: \"${gistId}\"`)
 
 							editor.setValue(lines.join('\n'))
 						} else {
-							editor.setValue(
-								`---\ngist_id: \"${gistId}\"\n---\n\n${content}`
-							)
+							editor.setValue(`---\ngist_id: \"${gistId}\"\n---\n\n${content}`)
 						}
 					}
 
@@ -81,12 +71,16 @@ export default class PublishGistPlugin extends Plugin {
 
 	onunload() {}
 
+	createGithubConnection() {
+		if (this.settings.token !== '') {
+			this.githubInterface = new Octokit({ auth: this.settings.token })
+		} else {
+			this.githubInterface = null
+		}
+	}
+
 	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			await this.loadData()
-		)
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData())
 	}
 
 	async saveSettings() {
