@@ -22,16 +22,13 @@ class GistSyncSettingTab extends PluginSettingTab {
 			href: 'https://github.com/settings/tokens/new'
 		})
 
-		new Setting(containerEl)
-			.setName('Github access token')
-			.addText((text) =>
-				text
-					.setValue(this.plugin.settings.token)
-					.onChange(async (value) => {
-						this.plugin.settings.token = value
-						await this.plugin.saveSettings()
-					})
-			)
+		new Setting(containerEl).setName('Github access token').addText((text) =>
+			text.setValue(this.plugin.settings.token).onChange(async (value) => {
+				this.plugin.settings.token = value
+				await this.plugin.saveSettings()
+				this.plugin.createGithubConnection()
+			})
+		)
 	}
 }
 
