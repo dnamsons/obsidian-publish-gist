@@ -1,7 +1,7 @@
-import { Editor, MarkdownView, Notice, Plugin } from 'obsidian'
+import { Editor, MarkdownView, Notice, Plugin, TFile } from 'obsidian'
 import { Octokit } from '@octokit/rest'
 import GistSyncSettingTab from './settings'
-import { getFrontMatter } from './utils'
+import { FrontMatter, getFrontMatter, gistFileIdFromFilename, gistUrl } from './utils'
 import NoteLinkTransformer from './noteLinkTransformer'
 
 interface PluginSettings {
@@ -36,6 +36,37 @@ export default class PublishGistPlugin extends Plugin {
 				} else {
 					new Notice('No Github token')
 				}
+			}
+		})
+
+		this.app.workspace.on('editor-menu', (menu, editor, markdownView) => {
+			console.log('gist_id', getFrontMatter(this.app, markdownView.file))
+
+			if (getFrontMatter(this.app, markdownView.file)?.gist_id) {
+				menu.addItem((item) =>
+					item
+						.setTitle('Open Gist')
+						.setIcon('github-glyph')
+						.onClick(() => console.log('Open'))
+				)
+			} else {
+				menu.addItem((item) =>
+					item
+						.setTitle('Publish to a Gist')
+						.setIcon('github-glyph')
+						.onClick(async () => await this.makeRequest(editor))
+				)
+			}
+		})
+		this.app.workspace.on('file-menu', (menu, file) => {
+			const gistId = getFrontMatter(this.app, file as TFile)?.gist_id
+			if (gistId) {
+				menu.addItem((item) =>
+					item
+						.setTitle('Open Gist')
+						.setIcon('github-glyph')
+						.onClick(() => window.open(`${gistUrl(gistId)}#${gistFileIdFromFilename(file.name)}`))
+				)
 			}
 		})
 

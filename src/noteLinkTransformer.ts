@@ -1,5 +1,5 @@
 import { App, TFile } from 'obsidian'
-import { getFrontMatter, gistFileIdFromFilename } from './utils'
+import { getFrontMatter, gistFileIdFromFilename, gistUrl } from './utils'
 
 interface Transformation {
 	linkString: string
@@ -76,7 +76,7 @@ export default class NoteLinkTransformer {
 			let linkToGist = `#${gistFileIdFromFilename(linkedFile.name)}`
 			// The note is in a different gist
 			if (gistId !== this.activeFileGistId) {
-				linkToGist = `https://gist.github.com/${gistId}${linkToGist}`
+				linkToGist = `${gistUrl(gistId)}${linkToGist}`
 			}
 
 			return {

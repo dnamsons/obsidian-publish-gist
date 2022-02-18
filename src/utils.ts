@@ -1,6 +1,6 @@
 import { App, TFile, FrontMatterCache } from 'obsidian'
 
-interface FrontMatter extends FrontMatterCache {
+export interface FrontMatter extends FrontMatterCache {
 	gist_id?: string
 }
 
@@ -16,3 +16,5 @@ export const getFrontMatter = (app: App, file: TFile): FrontMatter | null =>
  */
 export const gistFileIdFromFilename = (filename: string) =>
 	`file-${filename.toLowerCase().replace('.', ' ').split(' ').join('-')}`
+
+export const gistUrl = (gistId: string) => `https://gist.github.com/${gistId}`
