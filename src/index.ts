@@ -1,4 +1,4 @@
-import { Editor, MarkdownView, Notice, Plugin } from 'obsidian'
+import { Editor, MarkdownView, Notice, Plugin, TFile } from 'obsidian'
 import { Octokit } from '@octokit/rest'
 import GistSyncSettingTab from './settings'
 import { FrontMatter, getFrontMatter } from './utils'
@@ -21,6 +21,16 @@ export default class PublishGistPlugin extends Plugin {
 		await this.loadSettings()
 
 		this.createGithubConnection()
+
+		this.registerEvent(
+			this.app.vault.on('delete', async (file) => {
+				const gistId = getFrontMatter(this.app, file as TFile)?.gist_id
+
+				if (gistId) {
+					await this.deleteFileFromGist(file.name, gistId)
+				}
+			})
+		)
 
 		this.addCommand({
 			id: 'publish-gist',
@@ -77,6 +87,17 @@ export default class PublishGistPlugin extends Plugin {
 			} else {
 				editor.setValue(`---\ngist_id: \"${gistId}\"\n---\n\n${content}`)
 			}
+		}
+	}
+
+	async deleteFileFromGist(fileName: string, gistId: string) {
+		try {
+			await this.githubInterface.rest.gists.update({
+				gist_id: gistId,
+				files: { [fileName]: { content: '' } }
+			})
+		} catch (err) {
+			new Notice(`Unable to delete note from gist: ${err.message}`)
 		}
 	}
 
